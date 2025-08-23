@@ -1,6 +1,7 @@
 package com.gov.docmanagement.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Entity
@@ -10,7 +11,11 @@ public class PortalRoles {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @NotNull
     private String portalRole;
+
+    @NotNull
     private String description;
 
     @OneToOne

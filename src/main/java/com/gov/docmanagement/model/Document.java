@@ -20,8 +20,8 @@ public class Document {
         private String version;
         private Date createdDate;
         private String createdBy;
-
-        @ManyToOne
+        private String status;// Approved, Hold,
+        @OneToOne
         @JoinColumn(name = "department_id")
         private Department dept;
 
