@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,8 +58,17 @@ public class UserService {
         return user;
     }
 
-    public User update(User user) throws Exception {
-        validatePassword(user);
+    public Optional <User> findByUserName(String username){
+       return userRepository.findByUserName(username);
+    }
+
+    public User updateEmailAndUsername(User user) throws Exception {
+        //validatePassword(user);
         return userRepository.save(user);
     }
+
+    public List<User> findAllCitizens(Long roleId){
+        return userRepository.findByCitizenRole(roleId);
+    }
+
 }

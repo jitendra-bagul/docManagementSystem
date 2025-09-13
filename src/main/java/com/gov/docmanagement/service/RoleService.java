@@ -31,6 +31,10 @@ public class RoleService {
         return roleRepository.findById(id);
     }
 
+    public Optional<Role> findByRoleName(String roleName){
+        return roleRepository.findRoleByName(roleName);
+    }
+
     public boolean deleteById(Long id){
         Optional<Role> role= roleRepository.findById(id);
         if(!role.isEmpty()){

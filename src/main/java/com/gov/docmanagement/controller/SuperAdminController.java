@@ -14,10 +14,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -25,6 +28,8 @@ import java.util.Optional;
 public class SuperAdminController {
 
     private static final Logger logger = LoggerFactory.getLogger(SuperAdminController.class);
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
     @Autowired
     RoleService roleService;
@@ -153,6 +158,62 @@ public class SuperAdminController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @PatchMapping("/updatePassword/{role}")
+    public ResponseEntity<?> updateAdminPassword(
+            @PathVariable String role,
+            @RequestBody Map<String, String> passwordPayload) throws Exception {
+        logger.info("updatePassword called for "+role);
+        String oldPassword = passwordPayload.get("oldPassword");
+        String newPassword = passwordPayload.get("newPassword");
+        Optional <Role> roleFromDB;
+        Optional<PortalRoles> portalRoles;
+        PortalRoles portalRole = new PortalRoles();
+        Optional<User> existingUserOpt = null;
+        if(role.equalsIgnoreCase(ApplicationConstants.ADMIN)){
+            roleFromDB = roleService.findByRoleName(ApplicationConstants.AO);//AO is admin so, confirming if it exists
+
+            if(roleFromDB.isPresent()){
+                existingUserOpt = userService.findByRoleId(roleFromDB.get().getId());
+            }else {
+                logger.info("Role not found , let's check portal role for Admin/AO ");
+                portalRole.setPortalRole(ApplicationConstants.ADMIN);
+                portalRole.setDescription(ApplicationConstants.ADMIN_DESC);
+                portalRoles = portalRolesService.findByPortalRole(portalRole);
+                if(portalRoles.isEmpty()){
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin Not Found");
+                }
+            }
+
+        }else if (role.equalsIgnoreCase(ApplicationConstants.SUPERADMIN)){
+            roleFromDB = roleService.findByRoleName(ApplicationConstants.HOD);//AO is admin so, confirming if it exists
+            if(roleFromDB.isPresent()){
+                existingUserOpt = userService.findByRoleId(roleFromDB.get().getId());
+            }else {
+                logger.info("Role not found , let's check portal role for SuperAdmin/HOD ");
+                portalRole.setPortalRole(ApplicationConstants.ADMIN);
+                portalRole.setDescription(ApplicationConstants.ADMIN_DESC);
+                portalRoles = portalRolesService.findByPortalRole(portalRole);
+                if(portalRoles.isEmpty()){
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Super Admin Not Found");
+                }
+            }
+        }
+
+        assert Objects.requireNonNull(existingUserOpt).isPresent();
+
+        User existingUser = existingUserOpt.get();
+
+        // Verify old password
+        if (!passwordEncoder.matches(oldPassword, existingUser.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Old password is incorrect");
+        }
+
+        // Encrypt and update new password
+        existingUser.setPassword(passwordEncoder.encode(newPassword));
+        userService.save(existingUser);
+
+        return ResponseEntity.ok("Password updated successfully");
+    }
 
     @GetMapping("/getAllRoles")
     public ResponseEntity<?> getAllRoles() {

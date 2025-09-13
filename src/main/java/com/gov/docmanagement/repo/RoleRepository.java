@@ -1,5 +1,6 @@
 package com.gov.docmanagement.repo;
 
+import com.gov.docmanagement.model.PortalRoles;
 import com.gov.docmanagement.model.Role;
 import com.gov.docmanagement.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,8 +16,9 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
 
     Optional<Role> findById(Long id);
 
-    /*@Query("SELECT u FROM User u WHERE u.role_id = :id")
-    Optional<User> findByRoleId(@Param("id") Long id);*/
+
+    @Query(value ="SELECT * FROM role_m WHERE role_name = :rolename", nativeQuery = true)
+    Optional<Role> findRoleByName(@Param("rolename") String rolename);
 
 
     //ArrayList<Role> findAll();//return all data
