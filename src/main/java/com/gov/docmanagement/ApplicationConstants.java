@@ -57,13 +57,14 @@ public class ApplicationConstants {
 
     //document stages
     public static final String Uploaded = "Uploaded";
-    public static final String WaitingForClerkApproval = "WaitingForClerkApproval";
     public static final String ApprovedByClerk = "ApprovedByClerk";
-    public static final String WaitingForSrClerkApproval = "WaitingForSrClerkApproval";
     public static final String ApprovedBySrClerk = "ApprovedBySrClerk";
-    public static final String WaitingForAccountOfficer = "WaitingForAccountOfficer";
     public static final String ApprovedByAccountOfficer = "ApprovedByAccountOfficer";
-    public static final String WaitingForHOD = "WaitingForHOD";
     public static final String ApprovedByHOD = "ApprovedByHOD";
+
+    //document download stages
+    public static final String RequestSent= "RequestSent";
+    public static final String ApprovedDownload = "ApprovedDownload";
+    public static final String Rejected ="Rejected";
 
 }

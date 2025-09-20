@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,16 +21,11 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/documents")
 public class DocumentController {
-
-    //searchDocument();
-    //numberOfDocumentsUploadedToday();
-    //view()
-    //raiseDownloadRequest()- will send request to HOD, if approved by HOD then user can download, later in UI will see Doownload option
-    //download()- if office user, can download without approvals
 
     @Autowired
     private StageRepository stageRepository;
@@ -45,7 +42,7 @@ public class DocumentController {
             @Valid @RequestPart("document") Document document,
             BindingResult result,
             @RequestPart("file") MultipartFile file) throws IOException {
-
+        logger.info("uploadDocument start ");
         if (result.hasErrors()) {
             List<String> errors = result.getFieldErrors()
                     .stream()
@@ -59,7 +56,9 @@ public class DocumentController {
         }
 
         Document savedDoc = documentService.saveDocument(document, file);
+        logger.info("uploadDocument end " + savedDoc);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedDoc);
+
     }
     // View all documents
     @GetMapping("/all")
@@ -135,6 +134,83 @@ public class DocumentController {
         List<Document> documents = documentService.findByDepartmentAndStatus(departmentObj.getId(), status);
 
         return ResponseEntity.ok(documents);
+    }
+
+    // Search
+    @GetMapping("/searchById/{id}")
+    public ResponseEntity<Document> searchById(@PathVariable Long id) {
+        return ResponseEntity.ok(documentService.findById(id));
+    }
+
+    @GetMapping("/searchByRefNumber/{refNumber}")
+    public ResponseEntity<Document> searchByRefNumber(@PathVariable String refNumber) {
+        return ResponseEntity.ok(documentService.findByRefNumber(refNumber));
+    }
+
+    // Counts
+    @GetMapping("/count/today")
+    public ResponseEntity<Long> countToday() {
+        return ResponseEntity.ok(documentService.numberOfDocumentsUploadedToday());
+    }
+
+    @GetMapping("/count/week")
+    public ResponseEntity<Long> countThisWeek() {
+        return ResponseEntity.ok(documentService.numberOfDocumentsUploadedThisWeek());
+    }
+
+    @GetMapping("/count/month")
+    public ResponseEntity<Long> countThisMonth() {
+        return ResponseEntity.ok(documentService.numberOfDocumentsUploadedThisMonth());
+    }
+
+    @GetMapping("/count/range")
+    public ResponseEntity<Long> countByRange(@RequestParam String startDate, @RequestParam String endDate) {
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+        return ResponseEntity.ok(documentService.numberOfDocumentsUploadedDateRange(start, end));
+    }
+
+    // Raise Download Request (Citizen)
+    @PostMapping("/download/request")
+    public ResponseEntity<String> raiseDownloadRequest(
+            @RequestParam Long documentId,
+            @RequestParam Long userId) {
+        return documentService.raiseDownloadRequest(documentId, userId);
+    }
+
+    // Approve Download Request (HOD)
+    @PutMapping("/download/approve/{requestId}")
+    public ResponseEntity<String> approveDownload(@PathVariable Long requestId,
+                                                              @RequestParam String hodName) {
+        return documentService.approveDownloadRequest(requestId, hodName);
+    }
+
+    @PutMapping("/download/reject/{requestId}")
+    public ResponseEntity<String> rejectDownload(@PathVariable Long requestId,
+                                                              @RequestParam String hodName) {
+        return documentService.rejectDownloadRequest(requestId, hodName);
+    }
+
+    // View all pending requests (HOD dashboard)
+    @GetMapping("/download/requests/pending")
+    public ResponseEntity<List<DocDownloadRequest>> viewPendingRequests() {
+        return ResponseEntity.ok(documentService.getPendingDownloadRequests());
+    }
+
+    // Direct Download
+    @GetMapping("/download/{documentId}")
+    public ResponseEntity<Resource> download(@PathVariable Long documentId) {
+        Resource file = documentService.downloadDocument(documentId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
+                .body(file);
+    }
+
+    //will called after user's login, based on status- Download Option will be shown and download url will be called
+    @GetMapping("/download/request/checkStatus")
+    public ResponseEntity<?> checkStatusOfDownloadRequest(@RequestParam Long documentId,
+            @RequestParam Long userId){
+      return documentService.checkStatusOfDownloadRequest(documentId,userId);
     }
 
 
