@@ -30,6 +30,12 @@ public class UserService {
     private static final String PASSWORD_REGEX =
             "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,20}$";
 
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
     public static boolean isValidPassword(String password) {
         Pattern pattern = Pattern.compile(PASSWORD_REGEX);
         Matcher matcher = pattern.matcher(password);
@@ -69,6 +75,17 @@ public class UserService {
 
     public List<User> findAllCitizens(Long roleId){
         return userRepository.findByCitizenRole(roleId);
+    }
+
+    public boolean resetPassword(String username, String newPassword) {
+        Optional<User> userOpt = userRepository.findByUserName(username);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+            return true;
+        }
+        return false;
     }
 
 }

@@ -26,4 +26,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   @Query(value = "SELECT * FROM user_m WHERE role_id = :roleId", nativeQuery = true)
   List<User> findByCitizenRole(@Param("roleId") Long roleId);
+
+
 }
